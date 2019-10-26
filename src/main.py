@@ -1,7 +1,8 @@
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler, CallbackQueryHandler
 import requests
 import re
-import bot_states, bot_messages
+import src.bot_states as bot_states
+import src.bot_messages as bot_messages
 import telegram
 import logging
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -16,15 +17,26 @@ custom_keyboard = [['/client'], ['/courier']]
 client_keyboard = [['/menu'], ['/makeorder'], ['/back']]
 courier_keyboard = [['/back']]
 order_keyboard = [['/cancel_order']]
+priority_keyboard = [['HIGH'],
+                     ['LOW'],
+                     ['/cancel_order']]
+location_keyboard = [[telegram.KeyboardButton(text="Отправить местоположение", request_location=True)],
+                     ['/cancel_order']]
 
 standart_markup = telegram.ReplyKeyboardMarkup(custom_keyboard, resize_keyboard=True)
 order_reply_markup = telegram.ReplyKeyboardMarkup(order_keyboard, resize_keyboard=True)
 client_markup = telegram.ReplyKeyboardMarkup(client_keyboard, resize_keyboard=True)
 courier_markup = telegram.ReplyKeyboardMarkup(courier_keyboard, resize_keyboard=True)
 
+location_markup = telegram.ReplyKeyboardMarkup(location_keyboard, resize_keyboard=True)
+priority_markup = telegram.ReplyKeyboardMarkup(priority_keyboard, resize_keyboard=True)
+
+
 def get_url():
-    contents = requests.get('https://random.dog/woof.json').json()
-    url = contents['url']
+    #contents = requests.get('https://random.dog/woof.json').json()
+    #url = contents['url']
+    contents = requests.get('https://www.themealdb.com/api/json/v1/1/random.php').json()
+    url = contents['meals'][0]['strMealThumb']
     return url
 
 
@@ -39,19 +51,29 @@ def menu(update, context):
 
 
 def make_order(update, context):
-    if not context.args:
-        context.bot.send_message(chat_id=update.message.chat_id, text=bot_messages.add_new_order, reply_markup=order_reply_markup)
-        return bot_states.READ_NEW_ORDER
-    order_text = "Вы заказали: " + ' '.join(context.args)
-    user_id = update.message.from_user.id
-    context.bot.send_message(chat_id=update.message.chat_id, text=order_text, reply_markup=client_markup)
+    context.bot.send_message(chat_id=update.message.chat_id, text=bot_messages.add_new_order, reply_markup=order_reply_markup)
+    return bot_states.READ_NEW_ORDER
 
 
 def read_new_order(update, context):
-    new_order_text = "Вы заказали: " + update.message.text
+    new_order_text = "Вы хотите заказать: " + update.message.text + "\n" \
+        "Укажите своё местоположение: "
+    context.bot.send_message(chat_id=update.message.chat_id, text=new_order_text, reply_markup=location_markup)
+    return bot_states.READ_USER_LOCATION
 
-    user_id = update.message.from_user.id
-    context.bot.send_message(chat_id=update.message.chat_id, text=new_order_text, reply_markup=client_markup)
+
+def read_user_location(update, context):
+    text = "Your location is:\n" + \
+           "latitude: " + str(update.message.location['latitude']) + "\n" + \
+           "longitude: " + str(update.message.location['longitude']) + "\n"
+    text += "Выберите приоритет вашего заказа: \n"
+    context.bot.send_message(chat_id=update.message.chat_id, text=text, reply_markup=priority_markup)
+    return bot_states.READ_USED_PRIORITY
+
+
+def read_user_priority(update, context):
+    text = "Мы приняли ваш заказ!\n"
+    context.bot.send_message(chat_id=update.message.chat_id, text=text, reply_markup=client_markup)
     return ConversationHandler.END
 
 
@@ -77,7 +99,11 @@ def courier(update, context):
 
 def ping(update, context):
     print(update.message.chat_id)
-    context.bot.send_message(chat_id=1025926145, text="/showorders")
+    print("context")
+    print(type(context))
+    print("update")
+    print(update)
+    context.bot.send_message(chat_id=update.message.chat_id, text="хоч?", reply_markup=location_markup)
 
 
 token = os.environ['TELEGRAM_BOT_TOKEN']
@@ -93,7 +119,9 @@ def main():
         entry_points=[CommandHandler('makeorder', make_order)],
 
         states={
-            bot_states.READ_NEW_ORDER: [MessageHandler(Filters.text, read_new_order)]
+            bot_states.READ_NEW_ORDER: [MessageHandler(Filters.text, read_new_order)],
+            bot_states.READ_USER_LOCATION: [MessageHandler(Filters.location, read_user_location)],
+            bot_states.READ_USED_PRIORITY: [MessageHandler(Filters.text, read_user_priority)]
         },
 
         fallbacks=[CommandHandler('cancel_order', cancel_order)]

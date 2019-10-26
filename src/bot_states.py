@@ -1,3 +1,5 @@
 (
-  READ_NEW_ORDER
-) = range(1)
+    READ_NEW_ORDER,
+    READ_USER_LOCATION,
+    READ_USED_PRIORITY
+) = range(3)
