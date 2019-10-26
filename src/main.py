@@ -32,9 +32,11 @@ location_markup = telegram.ReplyKeyboardMarkup(location_keyboard, resize_keyboar
 priority_markup = telegram.ReplyKeyboardMarkup(priority_keyboard, resize_keyboard=True)
 
 
-def get_url():
-    #contents = requests.get('https://random.dog/woof.json').json()
-    #url = contents['url']
+def get_url(admin):
+    if admin:
+        contents = requests.get('https://random.dog/woof.json').json()
+        url = contents['url']
+        return url
     contents = requests.get('https://www.themealdb.com/api/json/v1/1/random.php').json()
     url = contents['meals'][0]['strMealThumb']
     return url
@@ -45,8 +47,8 @@ def start(update, context):
 
 
 def menu(update, context):
-    url = get_url()
     chat_id = update.message.chat_id
+    url = get_url(chat_id in managers)
     context.bot.send_photo(chat_id=chat_id, photo=url)
 
 
@@ -68,6 +70,7 @@ def read_user_location(update, context):
            "longitude: " + str(update.message.location['longitude']) + "\n"
     text += "Выберите приоритет вашего заказа: \n"
     context.bot.send_message(chat_id=update.message.chat_id, text=text, reply_markup=priority_markup)
+    #context.bot.sendLocation(chat_id=update.message.chat_id, latitude=update.message.location['latitude'], longitude=update.message.location['longitude']);
     return bot_states.READ_USED_PRIORITY
 
 
@@ -97,6 +100,15 @@ def courier(update, context):
     return ConversationHandler.END
 
 
+def admin(update, context):
+    if context.args:
+        if context.args[0] == admin_key:
+            managers.append(update.message.chat_id)
+            print("manager added")
+    return None
+
+
+# FOR DEBUGING
 def ping(update, context):
     print(update.message.chat_id)
     print("context")
@@ -106,6 +118,8 @@ def ping(update, context):
     context.bot.send_message(chat_id=update.message.chat_id, text="хоч?", reply_markup=location_markup)
 
 
+managers = []
+admin_key = os.environ['TELEGRAM_ADMIN_KEY']
 token = os.environ['TELEGRAM_BOT_TOKEN']
 updater = Updater(token, use_context=True)
 dp = updater.dispatcher
@@ -130,9 +144,9 @@ def main():
     dp.add_handler(CommandHandler('client', client))
     dp.add_handler(CommandHandler('courier', courier))
     dp.add_handler(CommandHandler('back', back))
+    dp.add_handler(CommandHandler('admin', admin))
 
-
-    dp.add_handler(CommandHandler('ping', ping)) # TODO
+    dp.add_handler(CommandHandler('ping', ping))  # TODO
 
     updater.start_polling()
     updater.idle()

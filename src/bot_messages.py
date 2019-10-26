@@ -10,7 +10,7 @@ client_response = "Вы попали в виртуальный ресторан.
 courier_response = "Работы нет, но вы держитесь."
 
 add_new_order = "Введите заказ:\n\n "\
-                 "/cancel - отменить заказ"
+                 "/cancel_order - отменить заказ"
 
 cancel_order = "Вы отменили заказ.\n"
 
