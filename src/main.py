@@ -2,7 +2,9 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Conve
 import requests
 import re
 import src.bot_states as bot_states
-import src.bot_messages as bot_messages
+import src.bot_messages as bot_essages
+from src.data_base import Courier
+from src.data_base import Order
 import telegram
 import logging
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -126,6 +128,9 @@ dp = updater.dispatcher
 
 
 def main():
+    Courier.create_table()
+    Order.create_table()
+
     dp.add_handler(CommandHandler('start', start))
     dp.add_handler(CommandHandler('menu', menu))
 
