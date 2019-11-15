@@ -7,7 +7,8 @@ import telegram
 import logging
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 import os
-
+import src.map
+import pdfcrowd
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -65,10 +66,7 @@ def read_new_order(update, context):
 
 
 def read_user_location(update, context):
-    text = "Your location is:\n" + \
-           "latitude: " + str(update.message.location['latitude']) + "\n" + \
-           "longitude: " + str(update.message.location['longitude']) + "\n"
-    text += "Выберите приоритет вашего заказа: \n"
+    text = "Выберите приоритет вашего заказа: \n"
     context.bot.send_message(chat_id=update.message.chat_id, text=text, reply_markup=priority_markup)
     #context.bot.sendLocation(chat_id=update.message.chat_id, latitude=update.message.location['latitude'], longitude=update.message.location['longitude']);
     return bot_states.READ_USED_PRIORITY
@@ -76,6 +74,7 @@ def read_user_location(update, context):
 
 def read_user_priority(update, context):
     text = "Мы приняли ваш заказ!\n"
+
     context.bot.send_message(chat_id=update.message.chat_id, text=text, reply_markup=client_markup)
     return ConversationHandler.END
 
@@ -110,12 +109,27 @@ def admin(update, context):
 
 # FOR DEBUGING
 def ping(update, context):
-    print(update.message.chat_id)
     print("context")
     print(type(context))
     print("update")
     print(update)
-    context.bot.send_message(chat_id=update.message.chat_id, text="хоч?", reply_markup=location_markup)
+
+    map = src.map.Map()
+    map.add_placemark([55.7550256, 48.7445183], hint='Заказ 1', icon_color="#ff0000")
+    map.add_placemark([55.7550256, 48.7455183], hint='Заказ 2', icon_color="#0000ff")
+    map.add_route([55.7550256, 48.7455183], [55.7550256, 48.7445183])
+    map.save_html('test_map.html')
+
+    filename = 'test_image.jpg'
+    output_stream = open(filename, 'wb')
+    client = pdfcrowd.HtmlToImageClient('ansat_', '11f90dbbb4b98960fe5bfdd61cef9d5f')
+    client.setScreenshotWidth(640)
+    client.setScreenshotHeight(480)
+    client.setOutputFormat('jpg')
+    client.convertFileToStream('test_map.html', output_stream)
+    output_stream.close()
+
+    context.bot.send_photo(chat_id=update.message.chat_id, photo=open(filename, 'rb'), reply_markup=location_markup)
 
 
 managers = []
