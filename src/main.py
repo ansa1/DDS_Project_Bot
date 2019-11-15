@@ -2,7 +2,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Conve
 import requests
 import re
 import src.bot_states as bot_states
-import src.bot_messages as bot_essages
+import src.bot_messages as bot_messages
 from src.data_base import Courier
 from src.data_base import Order
 import telegram
