@@ -291,13 +291,15 @@ def admin_get_courier_list(update, context):
         context.bot.send_message(chat_id=update.message.chat_id, text=bot_messages.not_admin, reply_markup=standart_markup)
         return ConversationHandler.END
     result = ""
-    for courier in Courier.select():
-        print(courier.locationX, courier.locationY)
-        result = result + "Courier ID: " + str(courier.courier_id) + "\n"
-    if len(result) == 0:
+    try:
+        for courier in Courier.select():
+            result = result + "Courier ID: " + str(courier.courier_id) + "\n"
+        if len(result) == 0:
+            context.bot.send_message(chat_id=update.message.chat_id, text="Курьеры еще не появились..", reply_markup=admin_functions_markup)
+        else:
+            context.bot.send_message(chat_id=update.message.chat_id, text=result, reply_markup=admin_functions_markup)
+    except Courier.DoesNotExist:
         context.bot.send_message(chat_id=update.message.chat_id, text="Курьеры еще не появились..", reply_markup=admin_functions_markup)
-    else:
-        context.bot.send_message(chat_id=update.message.chat_id, text=result, reply_markup=admin_functions_markup)
     return ConversationHandler.END
 
 
