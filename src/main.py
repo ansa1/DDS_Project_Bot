@@ -1,15 +1,15 @@
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler, CallbackQueryHandler
 import requests
 import re
-import bot_states as bot_states
-import bot_messages as bot_messages
-from data_base import Courier
-from data_base import Order
+import src.bot_states as bot_states
+import src.bot_messages as bot_messages
+from src.data_base import Courier
+from src.data_base import Order
 import telegram
 import logging
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 import os
-import map
+import src.map
 import pdfcrowd
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
