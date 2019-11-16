@@ -5,6 +5,9 @@ db = SqliteDatabase('orders_and_couriers.db')
 
 class Courier(Model):
     courier_id = IntegerField()
+    locationX = DoubleField()
+    locationY = DoubleField()
+
 
     class Meta:
         database = db
@@ -12,10 +15,13 @@ class Courier(Model):
 
 class Order(Model):
     client_id = IntegerField()
-    priority = IntegerField()  # TODO add enum for priority
+    priority = CharField()  # TODO add enum for priority
     status = IntegerField()  # TODO add enum for status
     text = CharField()
-    courier = ForeignKeyField(Courier, related_name='orders', null=True)
+    courier = IntegerField()
+    locationX = DoubleField()
+    locationY = DoubleField()
+    order_id = IntegerField()
 
     class Meta:
         database = db
