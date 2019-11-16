@@ -1,15 +1,15 @@
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler, CallbackQueryHandler
 import requests
 import re
-import src.bot_states as bot_states
-import src.bot_messages as bot_messages
-from src.data_base import Courier
-from src.data_base import Order
+import bot_states as bot_states
+import bot_messages as bot_messages
+from data_base import Courier
+from data_base import Order
 import telegram
 import logging
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 import os
-import src.map
+import map
 import pdfcrowd
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -393,8 +393,8 @@ def assign_confirm(update, context):
 
 
 managers = []
-admin_key = os.environ['TELEGRAM_ADMIN_KEY']
-token = os.environ['TELEGRAM_BOT_TOKEN']
+admin_key = 'khExeA702T6ZD0AO'
+token = '1042929196:AAGi_-MhKtNtbJ67PrFXZk69-BodxNgkvlE'
 updater = Updater(token, use_context=True)
 dp = updater.dispatcher
 
