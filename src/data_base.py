@@ -8,7 +8,6 @@ class Courier(Model):
     locationX = DoubleField()
     locationY = DoubleField()
 
-
     class Meta:
         database = db
 
@@ -22,6 +21,14 @@ class Order(Model):
     locationX = DoubleField()
     locationY = DoubleField()
     order_id = IntegerField()
+
+    class Meta:
+        database = db
+
+
+class Global(Model):
+    id = IntegerField()
+    root = CharField()
 
     class Meta:
         database = db

@@ -5,6 +5,7 @@ import src.bot_states as bot_states
 import src.bot_messages as bot_messages
 from src.data_base import Courier
 from src.data_base import Order
+from src.data_base import Global
 import telegram
 import logging
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -39,7 +40,7 @@ user_location_keyboard = [[telegram.KeyboardButton(text="Отправить ме
 courier_location_keyboard = [[telegram.KeyboardButton(text="Отправить местоположение", request_location=True)],
                      ['/cancel_registration']]
 
-reg_couriers_keyboard = [['/current_orders'], ['/back']]
+reg_couriers_keyboard = [['/current_orders'], ['/finish_order'], ['/back']]
 
 
 standart_markup = telegram.ReplyKeyboardMarkup(custom_keyboard, resize_keyboard=True)
@@ -102,18 +103,17 @@ def read_user_location(update, context):
     return bot_states.READ_USED_PRIORITY
 
 
-order_id = 0
-
-
 def read_user_priority(update, context):
     order_json['priority'] = update.message.text
     text = "Мы приняли ваш заказ!\n"
-    global order_id
-    print(order_id)
+    glob = Global.select().where(Global.root == 'Global').get()
+    tmp = glob.id
+    glob.delete_instance()
+    print(tmp)
     print(order_json)
-    Order.create(text=order_json['text'], locationX = order_json['latitude'], locationY = order_json['longitude'], order_id = order_id, priority = order_json['priority'], status = 0,
+    Order.create(text=order_json['text'], locationX = order_json['latitude'], locationY = order_json['longitude'], order_id = tmp, priority = order_json['priority'], status = 0,
                  client_id=update.message.chat_id, courier = -1)
-    order_id += 1
+    Global.create(id=tmp+1, root='Global')
     order_json.clear()
     context.bot.send_message(chat_id=update.message.chat_id, text=text, reply_markup=client_markup)
     return ConversationHandler.END
@@ -201,7 +201,7 @@ def admin(update, context):
         if context.args[0] == admin_key:
             managers.append(update.message.chat_id)
             context.bot.send_message(chat_id=update.message.chat_id, text=bot_messages.admin_panel, reply_markup=admin_functions_markup)
-            print("manager added")
+            # print("manager added")
     return ConversationHandler.END
 
 
@@ -270,10 +270,17 @@ def admin_get_order_list(update, context):
         return ConversationHandler.END
     result = ""
     for order in Order.select():
-        print(order.locationX, order.locationY)
+        # print(order.locationX, order.locationY)
 
         result = result + "Order ID: " + str(order.order_id) + "\n"
-        result = result + "Status: " + str(order.status) + "\n"
+        result = result + "Status: "
+        if order.status == 0:
+            result = result + "Не обработан\n"
+        if order.status == 1:
+            result = result + "В обработке\n"
+        if order.status == 2:
+            result = result + "Доставлен\n"
+
         result = result + "Text: " + str(order.text) + "\n"
         result = result + "Priority: " + str(order.priority) + "\n"
         if order.courier != -1:
@@ -380,16 +387,48 @@ def assign_confirm(update, context):
     if text == "Да":
         tmp_order = Order.select().where(Order.order_id == assign_json['order']).get()
         tmp_order.courier = assign_json['courier']
+        tmp_order.status = 1
         tmp_order.save()
         print("Link done")
         context.bot.send_message(chat_id=assign_json['courier'], text="Вам пришел заказ:\n" + print_order(assign_json['order']), reply_markup=reg_couriers_markup)
         user_id = Order.get(Order.order_id == assign_json['order']).client_id
         context.bot.send_message(chat_id=user_id, text="Ваш заказ взят курьером {} \n".format(assign_json['courier']), reply_markup=standart_markup)
-        context.bot.send_message(chat_id=update.message.chat_id, text="К заказу успешно прикреплен курьер. \nСообщение ему скоро будет отправлено! \n", reply_markup=admin_functions_markup)
+        context.bot.send_message(chat_id=user_id, text="Статус вашего заказа: В обработке \n", reply_markup=standart_markup)
+        context.bot.send_message(chat_id=update.message.chat_id, text="К заказу успешно прикреплен курьер. \nСообщение ему уже отправлено! \n", reply_markup=admin_functions_markup)
+
     else:
         assign_json.clear()
         context.bot.send_message(chat_id=update.message.chat_id, text="Отменяем операцию \n", reply_markup=admin_functions_markup)
     return ConversationHandler.END
+
+
+def finish_order(update, context):
+    try:
+        result = ""
+        courier = Courier.select().where(Courier.courier_id == update.message.chat_id).get()
+        for order in Order.select().where(Order.courier == update.message.chat_id):
+            result = result + "Номер заказа: " + str(order.order_id) + '\n'
+            result = result + "Описание заказа: " + str(order.text) + '\n'
+            result = result + str(order.locationX) + '\n'
+            result = result + str(order.locationY) + '\n\n'
+        result = result + "Какой заказ вы хотите завершить?\n"
+        context.bot.send_message(chat_id=update.message.chat_id, text=result, reply_markup=reg_couriers_markup)
+        return bot_states.READ_FINISH_ORDER
+    except Courier.DoesNotExist:
+        context.bot.send_message(chat_id=update.message.chat_id, text="Вы не являетесь курьером!\n", reply_markup=courier_markup)
+        return ConversationHandler.END
+
+
+def read_finish_order(update, context):
+    try:
+        order = Order.select().where(Order.order_id == update.message.text).get()
+        context.bot.send_message(chat_id=order.client_id, text="Ваш заказ успкешно выполнен!\n", reply_markup=standart_markup)
+        context.bot.send_message(chat_id=update.message.chat_id, text="Спасибо за успешно выполненный заказ!\n", reply_markup=reg_couriers_markup)
+        order.delete_instance()
+        return ConversationHandler.END
+    except Order.DoesNotExist:
+        context.bot.send_message(chat_id=update.message.chat_id, text="Номер заказа не верен!\n", reply_markup=reg_couriers_markup)
+        return ConversationHandler.END
 
 
 managers = []
@@ -399,12 +438,11 @@ updater = Updater(token, use_context=True)
 dp = updater.dispatcher
 
 
-
-
 def main():
     Courier.create_table()
     Order.create_table()
-
+    Global.create_table()
+    # Global.create(id=0, root='Global')
     dp.add_handler(CommandHandler('start', start))
     dp.add_handler(CommandHandler('menu', menu))
 
@@ -457,6 +495,18 @@ def main():
     dp.add_handler(CommandHandler('back', back))
     dp.add_handler(CommandHandler('admin', admin))
     dp.add_handler(CommandHandler('admin_panel', admin_panel))
+
+    finish_order_handler = ConversationHandler(
+        entry_points=[CommandHandler('finish_order', finish_order)],
+
+        states={
+            bot_states.READ_FINISH_ORDER: [MessageHandler(Filters.text, read_finish_order)]
+        },
+
+        fallbacks=[CommandHandler('back', back)]
+    )
+
+    dp.add_handler(finish_order_handler)
 
     dp.add_handler(CommandHandler('ping', ping))  # TODO
 
