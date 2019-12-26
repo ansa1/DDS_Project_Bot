@@ -326,7 +326,7 @@ def ping(update, context):
 
     filename = 'test_image.jpg'
     output_stream = open(filename, 'wb')
-    client = pdfcrowd.HtmlToImageClient('ansat_', '11f90dbbb4b98960fe5bfdd61cef9d5f')
+    client = pdfcrowd.HtmlToImageClient('ansa1_', 'ca1a906dd7c3e773b52fefcf28aded2d')
     client.setScreenshotWidth(640)
     client.setScreenshotHeight(480)
     client.setOutputFormat('jpg')
