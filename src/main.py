@@ -155,7 +155,7 @@ def current_orders(update, context):
         map.save_html('current_orders.html')
         filename = 'current_orders.jpg'
         output_stream = open(filename, 'wb')
-        client = pdfcrowd.HtmlToImageClient('ansat_', '11f90dbbb4b98960fe5bfdd61cef9d5f')
+        client = pdfcrowd.HtmlToImageClient('ansa1_', 'ca1a906dd7c3e773b52fefcf28aded2d')
         client.setScreenshotWidth(640)
         client.setScreenshotHeight(480)
         client.setOutputFormat('jpg')
@@ -226,7 +226,7 @@ def admin_print_orders_map(update, context):
     print("save map")
     filename = 'orders.jpg'
     output_stream = open(filename, 'wb')
-    client = pdfcrowd.HtmlToImageClient('ansat_', '11f90dbbb4b98960fe5bfdd61cef9d5f')
+    client = pdfcrowd.HtmlToImageClient('ansa1_', 'ca1a906dd7c3e773b52fefcf28aded2d')
     client.setScreenshotWidth(640)
     client.setScreenshotHeight(480)
     client.setOutputFormat('jpg')
@@ -251,7 +251,7 @@ def admin_print_couriers_map(update, context):
     print("save map")
     filename = 'couriers.jpg'
     output_stream = open(filename, 'wb')
-    client = pdfcrowd.HtmlToImageClient('ansat_', '11f90dbbb4b98960fe5bfdd61cef9d5f')
+    client = pdfcrowd.HtmlToImageClient('ansa1_', 'ca1a906dd7c3e773b52fefcf28aded2d')
     client.setScreenshotWidth(640)
     client.setScreenshotHeight(480)
     client.setOutputFormat('jpg')
